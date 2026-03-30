@@ -10,7 +10,7 @@ import {
   NoSubscriberBehavior,
 } from '@discordjs/voice';
 import { VoiceBasedChannel } from 'discord.js';
-import ytdl from 'ytdl-core';
+import ytDlp from 'yt-dlp-exec';
 import { STREAMS, Stream, pickStream } from './streams.js';
 import { sessionDb, recalcWeights, getWeight } from './db.js';
 
@@ -48,14 +48,12 @@ export async function startPlaying(channel: VoiceBasedChannel): Promise<NowPlayi
 
   connection.subscribe(player);
 
-  // Stream audio via ytdl
-  const resource = createAudioResource(
-    ytdl(stream.url, {
-      filter: 'audioonly',
-      quality: 'lowestaudio',
-      highWaterMark: 1 << 25,
-    }),
-  );
+  // Stream audio via yt-dlp
+  const ytdlProcess = ytDlp.exec(stream.url, {
+    format: 'bestaudio',
+    output: '-',
+  });
+  const resource = createAudioResource(ytdlProcess.stdout!);
 
   player.play(resource);
   await entersState(player, AudioPlayerStatus.Playing, 10_000);
