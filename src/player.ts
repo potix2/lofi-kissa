@@ -50,15 +50,25 @@ export async function startPlaying(channel: VoiceBasedChannel): Promise<NowPlayi
   connection.subscribe(player);
 
   // Stream audio via yt-dlp
+  console.log(`[player] spawning yt-dlp for: ${stream.url}`);
   const ytdlProcess = spawn('yt-dlp', [
     stream.url,
     '-f', 'bestaudio',
     '-o', '-',
     '--quiet',
   ], { stdio: ['ignore', 'pipe', 'pipe'] });
+
+  ytdlProcess.stderr?.on('data', (d) => console.error(`[yt-dlp stderr] ${d}`));
+  ytdlProcess.on('error', (e) => console.error(`[yt-dlp spawn error] ${e}`));
+  ytdlProcess.on('close', (code) => console.log(`[yt-dlp] exited with code ${code}`));
+
   const resource = createAudioResource(ytdlProcess.stdout!, {
     inputType: StreamType.Arbitrary,
   });
+  resource.playStream.on('error', (e) => console.error(`[audio resource error] ${e}`));
+
+  player.on('error', (e) => console.error(`[player error] ${e}`));
+  player.on('stateChange', (o, n) => console.log(`[player] ${o.status} → ${n.status}`));
 
   player.play(resource);
   await entersState(player, AudioPlayerStatus.Playing, 10_000);
