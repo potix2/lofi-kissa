@@ -11,7 +11,7 @@ import {
   NoSubscriberBehavior,
 } from '@discordjs/voice';
 import { VoiceBasedChannel } from 'discord.js';
-import { spawn } from 'child_process';
+import { spawn, execSync } from 'child_process';
 import { STREAMS, Stream, pickStream } from './streams.js';
 import { sessionDb, recalcWeights, getWeight } from './db.js';
 
@@ -49,28 +49,37 @@ export async function startPlaying(channel: VoiceBasedChannel): Promise<NowPlayi
 
   connection.subscribe(player);
 
-  // Stream audio via yt-dlp
+  // Resolve direct stream URL via yt-dlp, then pipe through ffmpeg
   console.log(`[player] starting: ${stream.title}`);
-  const ytdlProcess = spawn('yt-dlp', [
-    stream.url,
-    '-f', 'bestaudio',
-    '-o', '-',
-    '--quiet',
-    '--extractor-args', 'youtube:player_client=android_vr,android',
+  let directUrl: string;
+  try {
+    directUrl = execSync(
+      `yt-dlp -f "bestaudio[ext=webm]/bestaudio" --get-url --quiet "${stream.url}"`,
+      { timeout: 15000 }
+    ).toString().trim().split('\n')[0]!;
+    console.log(`[player] resolved URL (${directUrl.slice(0, 60)}...)`);
+  } catch (e) {
+    console.warn(`[player] yt-dlp failed for "${stream.title}", retrying with next stream...`);
+    setTimeout(() => startPlaying(channel), 3000);
+    return nowPlaying.get(guildId) ?? { stream, sessionId: -1, startedAt: Date.now() };
+  }
+
+  const ffmpegProcess = spawn('ffmpeg', [
+    '-reconnect', '1',
+    '-reconnect_streamed', '1',
+    '-reconnect_delay_max', '5',
+    '-i', directUrl,
+    '-f', 'opus',
+    '-ar', '48000',
+    '-ac', '2',
+    'pipe:1',
   ], { stdio: ['ignore', 'pipe', 'pipe'] });
 
-  // If yt-dlp fails, retry with next stream after short delay
-  ytdlProcess.stderr?.on('data', (d) => process.stderr.write(`[yt-dlp] ${d}`));
-  ytdlProcess.on('error', (e) => console.error(`[player] yt-dlp error: ${e.message}`));
-  ytdlProcess.on('close', (code) => {
-    if (code !== 0) {
-      console.warn(`[player] yt-dlp exited ${code} for "${stream.title}", retrying with next stream...`);
-      setTimeout(() => startPlaying(channel), 3000);
-    }
-  });
+  ffmpegProcess.stderr?.on('data', () => {}); // suppress ffmpeg progress logs
+  ffmpegProcess.on('error', (e) => console.error(`[player] ffmpeg error: ${e.message}`));
 
-  const resource = createAudioResource(ytdlProcess.stdout!, {
-    inputType: StreamType.Arbitrary,
+  const resource = createAudioResource(ffmpegProcess.stdout!, {
+    inputType: StreamType.OggOpus,
   });
   resource.playStream.on('error', (e) => console.error(`[player] audio resource error: ${e.message}`));
 
