@@ -12,7 +12,7 @@ import {
 } from '@discordjs/voice';
 import { VoiceBasedChannel } from 'discord.js';
 import { spawn, execSync } from 'child_process';
-import { STREAMS, Stream, pickStream } from './streams.js';
+import { getAllStreams, Stream, pickStream } from './streams.js';
 import { sessionDb, recalcWeights, getWeight } from './db.js';
 
 export interface NowPlaying {
@@ -27,8 +27,8 @@ const nowPlaying = new Map<string, NowPlaying>(); // guildId → now playing
 export async function startPlaying(channel: VoiceBasedChannel): Promise<NowPlaying> {
   const guildId = channel.guild.id;
 
-  // Update weights from DB before picking
-  const streams = STREAMS.map((s) => ({ ...s, weight: getWeight(s.id) }));
+  // Update weights from DB before picking (includes EXTRA_STREAMS from env)
+  const streams = getAllStreams().map((s) => ({ ...s, weight: getWeight(s.id) }));
   const stream = pickStream(streams);
 
   // Join voice channel
@@ -51,11 +51,19 @@ export async function startPlaying(channel: VoiceBasedChannel): Promise<NowPlayi
 
   // Resolve direct stream URL via yt-dlp, then pipe through ffmpeg
   console.log(`[player] starting: ${stream.title}`);
+
+  // Build yt-dlp args
+  const cookiesFile = process.env.COOKIES_FILE;
+  const cookiesFlag = cookiesFile ? `--cookies "${cookiesFile}"` : '';
+  // --playlist-random picks a random entry when the URL is a playlist
+  const isPlaylist = stream.url.includes('playlist?list=') || stream.url.includes('/playlist/');
+  const playlistFlag = isPlaylist ? '--playlist-random --playlist-items 1' : '';
+
   let directUrl: string;
   try {
     directUrl = execSync(
-      `yt-dlp -f "bestaudio[ext=webm]/bestaudio" --get-url --quiet "${stream.url}"`,
-      { timeout: 15000 }
+      `yt-dlp -f "bestaudio[ext=webm]/bestaudio" --get-url --quiet ${cookiesFlag} ${playlistFlag} "${stream.url}"`,
+      { timeout: 30000 }
     ).toString().trim().split('\n')[0]!;
     console.log(`[player] resolved URL (${directUrl.slice(0, 60)}...)`);
   } catch (e) {

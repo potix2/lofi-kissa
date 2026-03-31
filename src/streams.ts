@@ -28,6 +28,39 @@ export const STREAMS: Stream[] = [
 ];
 
 /**
+ * Load extra streams from environment variables.
+ *
+ * EXTRA_STREAMS   : comma-separated list of YouTube URLs (videos or playlists)
+ * EXTRA_STREAM_TITLES : optional comma-separated titles matching each URL
+ *
+ * Example .env:
+ *   EXTRA_STREAMS=https://www.youtube.com/playlist?list=PLxxxxxx,https://www.youtube.com/watch?v=yyyy
+ *   EXTRA_STREAM_TITLES=My Premium Playlist,Favorite Track
+ */
+export function loadExtraStreams(): Stream[] {
+  const raw = process.env.EXTRA_STREAMS ?? '';
+  if (!raw.trim()) return [];
+
+  const urls = raw.split(',').map((u) => u.trim()).filter(Boolean);
+  const titlesRaw = process.env.EXTRA_STREAM_TITLES ?? '';
+  const titles = titlesRaw.split(',').map((t) => t.trim());
+
+  return urls.map((url, i) => ({
+    id: `extra-${i}`,
+    url,
+    title: titles[i] || `Extra Stream ${i + 1}`,
+    weight: 1.0,
+  }));
+}
+
+/**
+ * Return all streams: built-in defaults + env-configured extras.
+ */
+export function getAllStreams(): Stream[] {
+  return [...STREAMS, ...loadExtraStreams()];
+}
+
+/**
  * Pick a stream using weighted random selection.
  */
 export function pickStream(streams: Stream[]): Stream {

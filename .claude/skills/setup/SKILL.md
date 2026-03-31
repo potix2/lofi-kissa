@@ -85,3 +85,55 @@ npm install -g pm2
 pm2 start dist/index.js --name lofi-kissa
 pm2 save && pm2 startup
 ```
+
+---
+
+### 6. YouTube Premium プレイリストの再生（オプション）
+
+YouTube Premium コンテンツやメンバー限定動画を再生するには、ブラウザの Cookie を yt-dlp に渡す必要があります。
+
+#### cookies.txt のエクスポート
+
+**Chrome / Edge の場合（拡張機能使用）**:
+1. Chrome ウェブストアで [**Get cookies.txt LOCALLY**](https://chrome.google.com/webstore/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc) をインストール
+2. YouTube (https://www.youtube.com) を開いてログイン済みであることを確認
+3. 拡張機能アイコンをクリック → **Export** → `cookies.txt` を安全な場所に保存
+   ```bash
+   # 例: WSL の場合
+   mkdir -p ~/.config/lofi-kissa
+   cp /mnt/c/Users/<username>/Downloads/cookies.txt ~/.config/lofi-kissa/cookies.txt
+   chmod 600 ~/.config/lofi-kissa/cookies.txt
+   ```
+
+**Firefox の場合**:
+```bash
+# yt-dlp 内蔵のブラウザ Cookie 取得（Firefox が起動していないこと）
+yt-dlp --cookies-from-browser firefox --get-url "https://www.youtube.com/watch?v=test"
+# または Firefox アドオン "cookies.txt" で手動エクスポート
+```
+
+#### .env の設定
+
+```bash
+# .env に追記
+COOKIES_FILE=/home/<user>/.config/lofi-kissa/cookies.txt
+
+# プレイリスト URL を追加（カンマ区切りで複数指定可）
+EXTRA_STREAMS=https://www.youtube.com/playlist?list=PLxxxxxx
+EXTRA_STREAM_TITLES=My Premium Lofi Playlist
+```
+
+#### 動作確認
+
+```bash
+# cookies を使って URL が解決できるか確認
+yt-dlp --cookies ~/.config/lofi-kissa/cookies.txt \
+  --get-url --quiet --playlist-random --playlist-items 1 \
+  "https://www.youtube.com/playlist?list=PLxxxxxx"
+# → CDN URL が返れば OK
+```
+
+> ⚠️ **セキュリティ注意**: `cookies.txt` はアカウントへのアクセス権を含みます。
+> - `.gitignore` に追加されていることを確認（デフォルトで除外済み）
+> - 他者と共有しない
+> - 定期的にブラウザでログアウト→再ログインして更新する
