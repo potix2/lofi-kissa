@@ -56,8 +56,7 @@ export async function startPlaying(channel: VoiceBasedChannel): Promise<NowPlayi
     '-f', 'bestaudio',
     '-o', '-',
     '--quiet',
-    '--no-warnings',
-    '--js-runtimes', 'nodejs',
+    '--extractor-args', 'youtube:player_client=android_vr,android',
   ], { stdio: ['ignore', 'pipe', 'pipe'] });
 
   // If yt-dlp fails, retry with next stream after short delay
