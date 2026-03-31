@@ -50,25 +50,29 @@ export async function startPlaying(channel: VoiceBasedChannel): Promise<NowPlayi
   connection.subscribe(player);
 
   // Stream audio via yt-dlp
-  console.log(`[player] spawning yt-dlp for: ${stream.url}`);
+  console.log(`[player] starting: ${stream.title}`);
   const ytdlProcess = spawn('yt-dlp', [
     stream.url,
     '-f', 'bestaudio',
     '-o', '-',
     '--quiet',
+    '--no-warnings',
+    '--js-runtimes', 'nodejs',
   ], { stdio: ['ignore', 'pipe', 'pipe'] });
 
-  ytdlProcess.stderr?.on('data', (d) => console.error(`[yt-dlp stderr] ${d}`));
-  ytdlProcess.on('error', (e) => console.error(`[yt-dlp spawn error] ${e}`));
-  ytdlProcess.on('close', (code) => console.log(`[yt-dlp] exited with code ${code}`));
+  // If yt-dlp fails, retry with next stream after short delay
+  ytdlProcess.on('error', (e) => console.error(`[player] yt-dlp error: ${e.message}`));
+  ytdlProcess.on('close', (code) => {
+    if (code !== 0) {
+      console.warn(`[player] yt-dlp exited ${code} for "${stream.title}", retrying with next stream...`);
+      setTimeout(() => startPlaying(channel), 3000);
+    }
+  });
 
   const resource = createAudioResource(ytdlProcess.stdout!, {
     inputType: StreamType.Arbitrary,
   });
-  resource.playStream.on('error', (e) => console.error(`[audio resource error] ${e}`));
-
-  player.on('error', (e) => console.error(`[player error] ${e}`));
-  player.on('stateChange', (o, n) => console.log(`[player] ${o.status} → ${n.status}`));
+  resource.playStream.on('error', (e) => console.error(`[player] audio resource error: ${e.message}`));
 
   player.play(resource);
   await entersState(player, AudioPlayerStatus.Playing, 10_000);
