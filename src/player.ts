@@ -90,8 +90,9 @@ export async function startPlaying(channel: VoiceBasedChannel): Promise<NowPlayi
     'pipe:1',
   ], { stdio: ['ignore', 'pipe', 'pipe'] });
 
-  ffmpegProcess.stderr?.on('data', () => {}); // suppress ffmpeg progress logs
+  ffmpegProcess.stderr?.on('data', (d: Buffer) => console.error(`[ffmpeg] ${d.toString().trim()}`));
   ffmpegProcess.on('error', (e) => console.error(`[player] ffmpeg error: ${e.message}`));
+  ffmpegProcess.on('close', (code) => console.log(`[player] ffmpeg exited ${code}`));
 
   const resource = createAudioResource(ffmpegProcess.stdout!, {
     inputType: StreamType.Raw,
