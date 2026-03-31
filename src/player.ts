@@ -48,11 +48,12 @@ export async function startPlaying(channel: VoiceBasedChannel): Promise<NowPlayi
     players.set(guildId, player);
   }
 
-  // Wait for connection to be ready before playing
-  if (connection.state.status !== VoiceConnectionStatus.Ready) {
-    await entersState(connection, VoiceConnectionStatus.Ready, 30_000);
-  }
+  // Subscribe immediately; re-subscribe whenever connection becomes Ready
   connection.subscribe(player);
+  connection.on(VoiceConnectionStatus.Ready, () => {
+    connection.subscribe(player!);
+    console.log('[player] connection Ready → re-subscribed');
+  });
 
   // Resolve direct stream URL via yt-dlp, then pipe through ffmpeg
   console.log(`[player] starting: ${stream.title}`);
