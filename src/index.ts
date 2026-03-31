@@ -18,6 +18,7 @@ import {
   likeCurrent,
   getNowPlaying,
 } from './player.js';
+import { initDb } from './db.js';
 
 const client = new Client({
   intents: [
@@ -131,4 +132,6 @@ client.once(Events.ClientReady, (c) => {
   console.log(`☕ lofi-kissa ready — logged in as ${c.user.tag}`);
 });
 
-client.login(process.env.DISCORD_TOKEN);
+initDb()
+  .then(() => client.login(process.env.DISCORD_TOKEN))
+  .catch((e) => { console.error('Failed to initialize DB:', e); process.exit(1); });
