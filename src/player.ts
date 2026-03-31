@@ -48,6 +48,11 @@ export async function startPlaying(channel: VoiceBasedChannel): Promise<NowPlayi
     players.set(guildId, player);
   }
 
+  // Log all connection state transitions for diagnostics
+  connection.on('stateChange', (oldState: any, newState: any) => {
+    console.log(`[voice] ${oldState.status} → ${newState.status}`);
+  });
+
   // Subscribe immediately; re-subscribe whenever connection becomes Ready
   connection.subscribe(player);
   connection.on(VoiceConnectionStatus.Ready, () => {
