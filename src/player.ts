@@ -2,6 +2,7 @@ import {
   AudioPlayer,
   AudioPlayerStatus,
   VoiceConnection,
+  VoiceConnectionStatus,
   StreamType,
   createAudioPlayer,
   createAudioResource,
@@ -47,6 +48,10 @@ export async function startPlaying(channel: VoiceBasedChannel): Promise<NowPlayi
     players.set(guildId, player);
   }
 
+  // Wait for connection to be ready before playing
+  if (connection.state.status !== VoiceConnectionStatus.Ready) {
+    await entersState(connection, VoiceConnectionStatus.Ready, 30_000);
+  }
   connection.subscribe(player);
 
   // Resolve direct stream URL via yt-dlp, then pipe through ffmpeg
