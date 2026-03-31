@@ -3,7 +3,7 @@
  * Each stream has a weight that adjusts based on user feedback.
  *
  * Note: YouTube live stream URLs change over time.
- * To find current URLs: search YouTube for the channel and copy the live stream URL.
+ * To verify a stream is live: yt-dlp --get-url <url>
  */
 export interface Stream {
   id: string;
@@ -17,12 +17,6 @@ export const STREAMS: Stream[] = [
     id: 'lofi-girl',
     url: 'https://www.youtube.com/watch?v=jfKfPfyJRdk',
     title: 'lofi hip hop radio 📚 beats to relax/study to',
-    weight: 1.0,
-  },
-  {
-    id: 'lofi-girl-night',
-    url: 'https://www.youtube.com/watch?v=Na0w3Mz46GA',
-    title: 'lofi hip hop radio 💤 beats to sleep/chill to',
     weight: 1.0,
   },
   {
