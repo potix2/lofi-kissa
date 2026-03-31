@@ -34,7 +34,7 @@ export async function startPlaying(channel: VoiceBasedChannel): Promise<NowPlayi
   const connection = joinVoiceChannel({
     channelId: channel.id,
     guildId,
-    adapterCreator: channel.guild.voiceAdapterCreator,
+    adapterCreator: channel.guild.voiceAdapterCreator as any,
   });
 
   // Create player
@@ -49,7 +49,7 @@ export async function startPlaying(channel: VoiceBasedChannel): Promise<NowPlayi
   connection.subscribe(player);
 
   // Stream audio via yt-dlp
-  const ytdlProcess = ytDlp.exec(stream.url, {
+  const ytdlProcess = (ytDlp as any).exec(stream.url, {
     format: 'bestaudio',
     output: '-',
   });
