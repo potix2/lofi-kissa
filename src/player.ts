@@ -2,6 +2,7 @@ import {
   AudioPlayer,
   AudioPlayerStatus,
   VoiceConnection,
+  StreamType,
   createAudioPlayer,
   createAudioResource,
   entersState,
@@ -10,7 +11,7 @@ import {
   NoSubscriberBehavior,
 } from '@discordjs/voice';
 import { VoiceBasedChannel } from 'discord.js';
-import ytDlp from 'yt-dlp-exec';
+import { spawn } from 'child_process';
 import { STREAMS, Stream, pickStream } from './streams.js';
 import { sessionDb, recalcWeights, getWeight } from './db.js';
 
@@ -49,11 +50,15 @@ export async function startPlaying(channel: VoiceBasedChannel): Promise<NowPlayi
   connection.subscribe(player);
 
   // Stream audio via yt-dlp
-  const ytdlProcess = (ytDlp as any).exec(stream.url, {
-    format: 'bestaudio',
-    output: '-',
+  const ytdlProcess = spawn('yt-dlp', [
+    stream.url,
+    '-f', 'bestaudio',
+    '-o', '-',
+    '--quiet',
+  ], { stdio: ['ignore', 'pipe', 'pipe'] });
+  const resource = createAudioResource(ytdlProcess.stdout!, {
+    inputType: StreamType.Arbitrary,
   });
-  const resource = createAudioResource(ytdlProcess.stdout!);
 
   player.play(resource);
   await entersState(player, AudioPlayerStatus.Playing, 10_000);
