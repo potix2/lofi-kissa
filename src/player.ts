@@ -60,6 +60,7 @@ export async function startPlaying(channel: VoiceBasedChannel): Promise<NowPlayi
   ], { stdio: ['ignore', 'pipe', 'pipe'] });
 
   // If yt-dlp fails, retry with next stream after short delay
+  ytdlProcess.stderr?.on('data', (d) => process.stderr.write(`[yt-dlp] ${d}`));
   ytdlProcess.on('error', (e) => console.error(`[player] yt-dlp error: ${e.message}`));
   ytdlProcess.on('close', (code) => {
     if (code !== 0) {
