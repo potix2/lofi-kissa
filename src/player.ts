@@ -54,7 +54,7 @@ export async function startPlaying(channel: VoiceBasedChannel): Promise<NowPlayi
   let directUrl: string;
   try {
     directUrl = execSync(
-      `yt-dlp -f "bestaudio[ext=webm]/bestaudio" --get-url --quiet "${stream.url}"`,
+      `yt-dlp -f "bestaudio[ext=webm]/bestaudio" --get-url --quiet --extractor-args "youtube:player_client=ios,android" "${stream.url}"`,
       { timeout: 15000 }
     ).toString().trim().split('\n')[0]!;
     console.log(`[player] resolved URL (${directUrl.slice(0, 60)}...)`);

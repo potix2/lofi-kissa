@@ -1,6 +1,9 @@
 /**
  * Curated lofi stream pool.
  * Each stream has a weight that adjusts based on user feedback.
+ *
+ * Note: YouTube live stream URLs change over time.
+ * To find current URLs: search YouTube for the channel and copy the live stream URL.
  */
 export interface Stream {
   id: string;
@@ -13,25 +16,19 @@ export const STREAMS: Stream[] = [
   {
     id: 'lofi-girl',
     url: 'https://www.youtube.com/watch?v=jfKfPfyJRdk',
-    title: 'lofi hip hop radio • beats to relax/study to',
+    title: 'lofi hip hop radio 📚 beats to relax/study to',
     weight: 1.0,
   },
   {
     id: 'lofi-girl-night',
-    url: 'https://www.youtube.com/watch?v=rUxyKA_-grg',
-    title: 'lofi hip hop radio • beats to sleep/chill to',
+    url: 'https://www.youtube.com/watch?v=Na0w3Mz46GA',
+    title: 'lofi hip hop radio 💤 beats to sleep/chill to',
     weight: 1.0,
   },
   {
     id: 'chillhop',
-    url: 'https://www.youtube.com/watch?v=7NOSDKb0HlU',
-    title: 'Chillhop Radio – jazzy lofi beats',
-    weight: 1.0,
-  },
-  {
-    id: 'lofi-cafe',
-    url: 'https://www.youtube.com/watch?v=lP9bMzVyMC4',
-    title: 'Coffee Shop Radio – lofi hip hop beats',
+    url: 'https://www.youtube.com/watch?v=5yx6BWlEVcY',
+    title: 'Chillhop Radio – jazzy & lofi hip hop beats',
     weight: 1.0,
   },
 ];
