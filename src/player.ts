@@ -61,10 +61,16 @@ export async function startPlaying(channel: VoiceBasedChannel): Promise<NowPlayi
 
   let directUrl: string;
   try {
-    directUrl = execSync(
-      `yt-dlp -f "bestaudio[ext=webm]/bestaudio" --get-url --quiet ${cookiesFlag} ${playlistFlag} "${stream.url}"`,
-      { timeout: 30000 }
-    ).toString().trim().split('\n')[0]!;
+    const ytdlpArgs = [
+      '--js-runtimes', `node:${process.execPath}`,
+      '-f', '91',          // lowest quality HLS (144p + audio)
+      '--get-url', '--quiet',
+      ...(cookiesFile ? ['--cookies', cookiesFile] : []),
+      ...(isPlaylist ? ['--playlist-random', '--playlist-items', '1'] : []),
+      stream.url,
+    ];
+    directUrl = execSync(`yt-dlp ${ytdlpArgs.map(a => `"${a}"`).join(' ')}`, { timeout: 30000 })
+      .toString().trim().split('\n')[0]!;
     console.log(`[player] resolved URL (${directUrl.slice(0, 60)}...)`);
   } catch (e) {
     console.warn(`[player] yt-dlp failed for "${stream.title}", retrying with next stream...`);
@@ -77,9 +83,10 @@ export async function startPlaying(channel: VoiceBasedChannel): Promise<NowPlayi
     '-reconnect_streamed', '1',
     '-reconnect_delay_max', '5',
     '-i', directUrl,
-    '-f', 'opus',
-    '-ar', '48000',
-    '-ac', '2',
+    '-vn',               // audio only
+    '-f', 's16le',       // raw PCM
+    '-ar', '48000',      // 48kHz
+    '-ac', '2',          // stereo
     'pipe:1',
   ], { stdio: ['ignore', 'pipe', 'pipe'] });
 
@@ -87,7 +94,7 @@ export async function startPlaying(channel: VoiceBasedChannel): Promise<NowPlayi
   ffmpegProcess.on('error', (e) => console.error(`[player] ffmpeg error: ${e.message}`));
 
   const resource = createAudioResource(ffmpegProcess.stdout!, {
-    inputType: StreamType.OggOpus,
+    inputType: StreamType.Raw,
   });
   resource.playStream.on('error', (e) => console.error(`[player] audio resource error: ${e.message}`));
 
