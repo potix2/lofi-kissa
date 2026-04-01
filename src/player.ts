@@ -52,6 +52,7 @@ export async function startPlaying(channel: VoiceBasedChannel): Promise<NowPlayi
   connection.on('stateChange', (oldState: any, newState: any) => {
     console.log(`[voice] ${oldState.status} → ${newState.status}`);
   });
+  connection.on('debug', (msg) => console.debug(`[voice] ${msg}`));
 
   // Subscribe immediately; re-subscribe whenever connection becomes Ready
   connection.subscribe(player);
@@ -90,6 +91,7 @@ export async function startPlaying(channel: VoiceBasedChannel): Promise<NowPlayi
   }
 
   const ffmpegProcess = spawn('ffmpeg', [
+    '-loglevel', 'error',
     '-reconnect', '1',
     '-reconnect_streamed', '1',
     '-reconnect_delay_max', '5',
@@ -101,7 +103,7 @@ export async function startPlaying(channel: VoiceBasedChannel): Promise<NowPlayi
     'pipe:1',
   ], { stdio: ['ignore', 'pipe', 'pipe'] });
 
-  ffmpegProcess.stderr?.on('data', (d: Buffer) => console.error(`[ffmpeg] ${d.toString().trim()}`));
+
   ffmpegProcess.on('error', (e) => console.error(`[player] ffmpeg error: ${e.message}`));
   ffmpegProcess.on('close', (code) => console.log(`[player] ffmpeg exited ${code}`));
 

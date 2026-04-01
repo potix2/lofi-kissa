@@ -127,6 +127,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
   }
 });
 
+client.on(Events.Debug, (msg) => console.debug(`[discord] ${msg}`));
+
 client.once(Events.ClientReady, (c) => {
   console.log(`☕ lofi-kissa ready — logged in as ${c.user.tag}`);
 });
